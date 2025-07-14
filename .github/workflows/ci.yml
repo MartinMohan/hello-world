@@ -1,0 +1,51 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install FPM
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev build-essential
+          sudo gem install --no-document fpm
+
+      - name: Build binary
+        run: make build
+
+      - name: Build deb
+        run: make deb
+
+      - name: Build Docker image
+        run: make docker
+
+      - name: Upload deb package
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: build/*.deb
+
+      - name: Push Docker image
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push ghcr.io/martinmohan/hello-world:$(cat VERSION)
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v$(cat VERSION)
+          files: build/*.deb

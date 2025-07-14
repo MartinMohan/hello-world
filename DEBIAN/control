@@ -1,0 +1,7 @@
+Package: hello-world
+Version: 0.1.0
+Section: base
+Priority: optional
+Architecture: amd64
+Maintainer: Martin Mohan <martin@example.com>
+Description: A simple hello-world CLI application
